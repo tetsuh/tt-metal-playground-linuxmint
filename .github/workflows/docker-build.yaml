@@ -1,0 +1,61 @@
+name: Build and Push Linux Mint Docker Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_os:
+        description: 'The target Linux Mint version to build.'
+        required: true
+        type: choice
+        options:
+          - linuxmint22.1
+          - linuxmint21.3
+        default: 'linuxmint22.1'
+      push_image:
+        description: 'Push the built image to the GitHub Container Registry'
+        type: boolean
+        default: true
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    # Grant permissions for the GITHUB_TOKEN to push to GHCR
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        if: github.event.inputs.push_image
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=${{ github.event.inputs.target_os }}-latest,enable={{is_default_branch}}
+            type=raw,value=${{ github.event.inputs.target_os }}-{{sha}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./${{ github.event.inputs.target_os }}/Dockerfile
+          push: ${{ github.event.inputs.push_image }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

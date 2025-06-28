@@ -43,6 +43,7 @@ jobs:
           repository: tenstorrent/tt-metal
           path: tt-metal
           ref: ${{ github.event.inputs.tt_metal_ref }}
+          submodules: recursive
 
       - name: Run commands inside the container
         run: |

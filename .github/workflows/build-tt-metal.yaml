@@ -53,7 +53,7 @@ jobs:
           echo "--- Building tt-metal (ref: ${{ github.event.inputs.tt_metal_ref }}) ---"
           cd tt-metal && ls -l
           echo "--- Installing dependencies ---"
-          ./install_dependencies.sh
+          ./install_dependencies.sh --docker
           echo "--- Building tt-metal ---"
           ./build_metal.sh
           echo "--- Build completed successfully! ---"

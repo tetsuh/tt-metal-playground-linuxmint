@@ -1,4 +1,5 @@
 name: Build tt-metal on Linux Mint
+run-name: Build tt-metal (${{ github.event.inputs.tt_metal_ref }}) on ${{ github.event.inputs.target_os }}
 
 on:
   workflow_dispatch: # Allows manual triggering

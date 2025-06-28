@@ -1,0 +1,59 @@
+name: Build tt-metal on Linux Mint
+
+on:
+  workflow_dispatch: # Allows manual triggering
+    inputs:
+      target_os:
+        description: 'The target Linux Mint version to build on'
+        required: true
+        type: choice
+        options:
+          - linuxmint22.1
+          - linuxmint21.3
+        default: 'linuxmint22.1'
+      tt_metal_ref:
+        description: 'Branch, tag or commit hash to checkout from tt-metal'
+        required: true
+        default: 'main'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    # Read permissions are required to pull from ghcr.io
+    permissions:
+      contents: read
+      packages: read
+
+    container:
+      # Specify the full image name, including the repository
+      image: ghcr.io/${{ github.repository }}:${{ github.event.inputs.target_os }}-latest
+      # Credentials to authenticate with ghcr.io
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: Checkout tt-metal
+        uses: actions/checkout@v4
+        with:
+          repository: tenstorrent/tt-metal
+          path: tt-metal
+          ref: ${{ github.event.inputs.tt_metal_ref }}
+
+      - name: Run commands inside the container
+        run: |
+          cat /etc/os-release
+          echo "Working directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
+          echo "--- Building tt-metal (ref: ${{ github.event.inputs.tt_metal_ref }}) ---"
+          cd tt-metal && ls -l
+          echo "--- Installing dependencies ---"
+          ./install_dependencies.sh
+          echo "--- Building tt-metal ---"
+          ./build_metal.sh
+          echo "--- Build completed successfully! ---"

@@ -26,6 +26,9 @@ jobs:
       contents: read
       packages: write
 
+    outputs:
+      tags: ${{ steps.meta.outputs.tags }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -60,3 +63,57 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    # Only run the test if the image was pushed to the registry
+    if: github.event.inputs.push_image
+
+    permissions:
+      contents: read
+      packages: read # required to pull from ghcr.io
+
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set test variables
+        id: set_vars
+        run: |
+          # The 'meta' step in the build job can output multiple tags. We'll use the first one for testing.
+          IMAGE_TAG=$(echo "${{ needs.build-and-push.outputs.tags }}" | head -n 1)
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+
+          if [[ "${{ github.event.inputs.target_os }}" == "linuxmint21.3" ]]; then
+            echo "expected_name=Linux Mint 21.3" >> $GITHUB_ENV
+            echo "expected_version_codename=virginia" >> $GITHUB_ENV
+            echo "expected_ubuntu_codename=jammy" >> $GITHUB_ENV
+          elif [[ "${{ github.event.inputs.target_os }}" == "linuxmint22.1" ]]; then
+            # Linux Mint 22.1 "Xia" is based on Ubuntu 24.04 "Noble Numbat"
+            echo "expected_name=Linux Mint 22.1" >> $GITHUB_ENV
+            echo "expected_version_codename=xia" >> $GITHUB_ENV
+            echo "expected_ubuntu_codename=noble" >> $GITHUB_ENV
+          else
+            echo "Unknown target_os: ${{ github.event.inputs.target_os }}"
+            exit 1
+          fi
+
+      - name: Test PRETTY_NAME
+        run: |
+          echo "Testing for PRETTY_NAME=\"${{ env.expected_name }}\" in ${{ env.IMAGE_TAG }}"
+          docker run --rm ${{ env.IMAGE_TAG }} grep -q "PRETTY_NAME=\"${{ env.expected_name }}\"" /etc/os-release
+
+      - name: Test VERSION_CODENAME
+        run: |
+          echo "Testing for VERSION_CODENAME=${{ env.expected_version_codename }} in ${{ env.IMAGE_TAG }}"
+          docker run --rm ${{ env.IMAGE_TAG }} grep -q "VERSION_CODENAME=${{ env.expected_version_codename }}" /etc/os-release
+
+      - name: Test UBUNTU_CODENAME
+        run: |
+          echo "Testing for UBUNTU_CODENAME=${{ env.expected_ubuntu_codename }} in ${{ env.IMAGE_TAG }}"
+          docker run --rm ${{ env.IMAGE_TAG }} grep -q "UBUNTU_CODENAME=${{ env.expected_ubuntu_codename }}" /etc/os-release

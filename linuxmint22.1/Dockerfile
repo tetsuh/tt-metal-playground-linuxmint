@@ -10,12 +10,10 @@ ARG UBUNTU_VERSION_CODENAME=noble
 ENV DEBIAN_FRONTEND=noninteractive
 # Add basic tools
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    curl gnupg locales
-
-# Set locale
-RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen && \
-    locale-gen en_US.UTF-8
+    apt-get install -y --no-install-recommends curl gnupg locales && \
+    # Set locale
+    localedef --no-archive -i en_US -f UTF-8 en_US.UTF-8 && \
+    rm -rf /var/lib/apt/lists/*
 
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
@@ -36,23 +34,18 @@ RUN echo "deb http://packages.linuxmint.com ${MINT_VERSION_CODENAME} main upstre
     rm -f /etc/apt/sources.list.d/ubuntu.sources && \
     apt-get update
 
-# Override base-files to match Linux Mint and install Mint system packages
-# This is necessary to ensure compatibility with the Mint repositories
-RUN apt-get install -y --allow-downgrades \
+# Install all required packages and clean up in a single layer to optimize image size
+RUN apt-get install -y --no-install-recommends --allow-downgrades \
+        # Override base-files to match Linux Mint for repository compatibility
         base-files/${MINT_VERSION_CODENAME} \
-        mintsystem
-
-# Install Linux Mint core packages and Cinnamon desktop environment
-RUN apt-get install -y --no-install-recommends \
+        mintsystem \
+        # Install Linux Mint core packages and Cinnamon desktop environment
         mint-meta-core \
-        mint-meta-cinnamon
-
-# Install additional packages for tt-metal
-RUN apt-get install -y --no-install-recommends \
-        git
-
-# Clear the apt cache
-RUN apt-get autoremove -y && \
+        mint-meta-cinnamon \
+        # Install additional packages for tt-metal
+        git && \
+    # Clear apt cache and remove unnecessary packages
+    apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

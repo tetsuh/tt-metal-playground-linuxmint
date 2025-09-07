@@ -9,6 +9,7 @@ on:
         required: true
         type: choice
         options:
+          - linuxmint22.2
           - linuxmint22.1
           - linuxmint21.3
         default: 'linuxmint22.1'

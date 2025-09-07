@@ -9,6 +9,7 @@ on:
         required: true
         type: choice
         options:
+          - linuxmint22.2
           - linuxmint22.1
           - linuxmint21.3
         default: 'linuxmint22.1'
@@ -97,6 +98,11 @@ jobs:
             # Linux Mint 22.1 "Xia" is based on Ubuntu 24.04 "Noble Numbat"
             echo "expected_name=Linux Mint 22.1" >> $GITHUB_ENV
             echo "expected_version_codename=xia" >> $GITHUB_ENV
+            echo "expected_ubuntu_codename=noble" >> $GITHUB_ENV
+          elif [[ "${{ github.event.inputs.target_os }}" == "linuxmint22.2" ]]; then
+            # Linux Mint 22.2 "Zara" is based on Ubuntu 24.04 "Noble Numbat"
+            echo "expected_name=Linux Mint 22.2" >> $GITHUB_ENV
+            echo "expected_version_codename=zara" >> $GITHUB_ENV
             echo "expected_ubuntu_codename=noble" >> $GITHUB_ENV
           else
             echo "Unknown target_os: ${{ github.event.inputs.target_os }}"

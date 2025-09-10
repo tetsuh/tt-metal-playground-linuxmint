@@ -57,6 +57,10 @@ jobs:
           cd tt-metal && ls -l
           echo "--- Installing dependencies ---"
           ./install_dependencies.sh --docker
+          echo "--- Debug generate script ---"
+          mkdir -p ttt
+          bash -x tt_metal/llrt/hal/codegen/codegen.sh . ./ttt
+          ls -l ttt
           echo "--- Building tt-metal ---"
           VERBOSE=1 ./build_metal.sh
           echo "--- Build completed successfully! ---"

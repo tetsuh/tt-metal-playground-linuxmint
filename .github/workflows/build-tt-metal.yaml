@@ -58,5 +58,5 @@ jobs:
           echo "--- Installing dependencies ---"
           ./install_dependencies.sh --docker
           echo "--- Building tt-metal ---"
-          ./build_metal.sh
+          VERBOSE=1 ./build_metal.sh
           echo "--- Build completed successfully! ---"

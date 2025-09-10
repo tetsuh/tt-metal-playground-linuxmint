@@ -61,6 +61,10 @@ jobs:
           mkdir -p ttt
           bash -x tt_metal/llrt/hal/codegen/codegen.sh . ./ttt
           ls -l ttt
+          echo "--- Debug generate code ---"
+          VERBOSE=1 ./build_metal.sh --configure-only
+          cd build_Release && ninja -v tt_metal/llrt/hal/CMakeFiles/hal_generate_dev_msgs_header
+          cd ../ && ls -l tt_metal/llrt/hal/generated
           echo "--- Building tt-metal ---"
           VERBOSE=1 ./build_metal.sh
-          echo "--- Build completed successfully! ---"
+          # echo "--- Build completed successfully! ---"
